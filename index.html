@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Negozio</title>
+<meta name="description" content="Negozio online">
+<link rel="icon" href="images/logo.png">
+<style>
+:root{--bg:#fbf7ef;--ink:#2a2118;--main:#1f5d3a;--accent:#d9480f;--card:#fff;--line:#e6dccb}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Georgia,"Times New Roman",serif;line-height:1.5}
+header{max-width:960px;margin:auto;padding:1.5rem 1rem .5rem;display:flex;gap:1rem;align-items:center}
+header img{width:64px;height:64px;border-radius:12px;object-fit:cover}
+h1{font-size:1.7rem;margin:0;color:var(--main)}
+header p{margin:.2rem 0 0}
+nav{display:flex;gap:.5rem;flex-wrap:wrap;max-width:960px;margin:1rem auto;padding:0 1rem}
+nav button{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:.5rem .9rem;border-radius:999px;font:inherit;cursor:pointer}
+nav button.on{background:var(--main);color:#fff;border-color:var(--main)}
+main{max-width:960px;margin:auto;padding:0 1rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem}
+.p{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+.ph{height:150px;background:var(--line);display:flex;align-items:center;justify-content:center;font-size:3rem}
+.ph img{width:100%;height:100%;object-fit:cover}
+.b{padding:.8rem;display:flex;flex-direction:column;gap:.3rem;flex:1}
+.b h3{margin:0;font-size:1.05rem}
+.b small{opacity:.7}
+.pr{font-weight:bold;color:var(--accent);margin-top:auto}
+.p button,.btn{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:.6rem;font:inherit;cursor:pointer}
+section.info{max-width:960px;margin:2rem auto 7rem;padding:0 1rem}
+.negozi{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem}
+.negozi div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:1rem}
+.negozi a{color:var(--main)}
+#bar{position:fixed;left:0;right:0;bottom:0;background:var(--main);color:#fff;padding:.9rem 1rem calc(.9rem + env(safe-area-inset-bottom,0px));display:flex;justify-content:space-between;cursor:pointer}
+#cart{position:fixed;inset:0;background:var(--bg);overflow:auto;padding:1rem;display:none;z-index:5}
+#cart .in{max-width:600px;margin:auto}
+.row{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding:.6rem 0;gap:.5rem}
+.row button{width:2rem;height:2rem;border-radius:50%;border:1px solid var(--line);background:var(--card);cursor:pointer}
+input,textarea{width:100%;padding:.7rem;margin:.3rem 0;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);font:inherit}
+.btn{display:block;width:100%;margin:.6rem 0;text-align:center;text-decoration:none}
+.btn.g{background:var(--main)}
+.btn.o{background:transparent;color:var(--ink);border:1px solid var(--line)}
+footer{text-align:center;padding:0 1rem 6rem;opacity:.7;font-size:.9rem}
+</style>
+</head>
+<body>
+
+<header>
+  <img id="logo" alt="Logo" onerror="this.remove()">
+  <div><h1 id="nome"></h1><p id="slogan"></p></div>
+</header>
+<nav id="cats"></nav>
+<main id="list"></main>
+
+<section class="info">
+  <h2>Dove siamo</h2>
+  <div class="negozi" id="negozi"></div>
+  <p id="contatti"></p>
+</section>
+<footer id="foot"></footer>
+
+<div id="bar" onclick="openCart()"><span id="cnt"></span><strong>Vedi carrello</strong></div>
+
+<div id="cart"><div class="in">
+  <h2>Il tuo carrello</h2>
+  <div id="rows"></div>
+  <h3 id="tot"></h3>
+  <input id="n" placeholder="Nome e cognome" autocomplete="name">
+  <input id="t" placeholder="Telefono" autocomplete="tel" type="tel">
+  <textarea id="i" rows="3" placeholder="Indirizzo di consegna completo" autocomplete="street-address"></textarea>
+  <h3>Come vuoi pagare?</h3>
+  <p style="margin:.2rem 0"><strong>Online</strong>, con carta o PayPal (non serve un account PayPal):</p>
+  <div id="paypal" style="margin:.6rem 0"></div>
+  <p style="margin:.2rem 0"><strong>Carta, Apple Pay o Google Pay</strong>: ti inviamo su WhatsApp il link per pagare:</p>
+  <a class="btn" href="#" onclick="return sendLink()">Ordina e ricevi il link di pagamento</a>
+  <p style="margin:.2rem 0"><strong>Alla consegna</strong>, in contanti al corriere (con condizioni):</p>
+  <a class="btn g" href="#" onclick="return sendWA()">Paga alla consegna (contrassegno)</a>
+  <a class="btn" id="card" href="#" onclick="return payCard()">Paga con carta</a>
+  <button class="btn o" onclick="closeCart()">Continua a comprare</button>
+</div></div>
+
+<script>
+/* =====================================================
+   CONFIG: per ogni cliente cambi SOLO questo blocco
+   ===================================================== */
+const CONFIG = {
+  nome: "Mercato Orientale",
+  slogan: "Spezie, frutta, snack e prodotti ayurvedici. Consegna in tutta Italia.",
+  logo: "images/logo.png",
+  colori: {sfondo:"#fbf7ef", testo:"#2a2118", principale:"#1f5d3a", accento:"#d9480f"},
+  whatsapp: "393758449974",
+  email: "info@esempio.it",
+  web3formsKey: "",
+  paypalClientId: "",
+  stripe: "",
+  spedizione: 0,
+  negozi: [
+    {nome:"Negozio 1", indirizzo:"Via Esempio 1, Roma", orari:"Lun-Sab 9-20", mappa:"https://maps.google.com/?q=Via+Esempio+1+Roma"},
+    {nome:"Negozio 2", indirizzo:"Via Esempio 2, Roma", orari:"Lun-Sab 9-20", mappa:"https://maps.google.com/?q=Via+Esempio+2+Roma"}
+  ],
+  prodotti: [
+    {id:1, nome:"Curry in polvere", cat:"Spezie", prezzo:3.50, img:"images/curry.jpg", em:"🌶️", note:"100 g"},
+    {id:2, nome:"Cannella di Ceylon", cat:"Spezie", prezzo:4.20, img:"images/cannella.jpg", em:"🪵", note:"50 g"},
+    {id:3, nome:"Cocco fresco", cat:"Frutta e verdura", prezzo:2.50, img:"images/cocco.jpg", em:"🥥", note:"1 pezzo"},
+    {id:4, nome:"Snack di lenticchie", cat:"Snack", prezzo:2.20, img:"images/snack.jpg", em:"🥜", note:"150 g"},
+    {id:5, nome:"Olio ayurvedico", cat:"Ayurveda", prezzo:7.90, img:"images/olio.jpg", em:"🌿", note:"100 ml"}
+  ]
+};
+/* ===================================================== */
+
+const C=CONFIG, P=C.prodotti;
+let cat="Tutti", cart={};
+const $=s=>document.querySelector(s);
+const eur=n=>n.toFixed(2).replace(".",",")+" €";
+
+function init(){
+  const r=document.documentElement.style, k=C.colori;
+  r.setProperty("--bg",k.sfondo);r.setProperty("--ink",k.testo);
+  r.setProperty("--main",k.principale);r.setProperty("--accent",k.accento);
+  document.title=C.nome;
+  $("#nome").textContent=C.nome;$("#slogan").textContent=C.slogan;
+  $("#logo").src=C.logo;
+  $("#negozi").innerHTML=C.negozi.map(s=>`<div><strong>${s.nome}</strong><br>${s.indirizzo}<br>${s.orari}<br><a href="${s.mappa}" target="_blank" rel="noopener">Apri la mappa</a></div>`).join("");
+  $("#contatti").innerHTML=`Scrivici su <a href="https://wa.me/${C.whatsapp}">WhatsApp</a> o a <a href="mailto:${C.email}">${C.email}</a>`;
+  $("#foot").textContent="© "+new Date().getFullYear()+" "+C.nome;
+  cats();lista();aggiorna();
+  if(C.paypalClientId)caricaPayPal();
+}
+function caricaPayPal(){
+  const s=document.createElement("script");
+  s.src="https://www.paypal.com/sdk/js?client-id="+encodeURIComponent(C.paypalClientId)+"&currency=EUR&locale=it_IT";
+  s.onload=()=>paypal.Buttons({
+    onClick:(data,actions)=>dati()?actions.resolve():actions.reject(),
+    createOrder:(data,actions)=>actions.order.create({
+      purchase_units:[{description:"Ordine "+C.nome,amount:{currency_code:"EUR",value:tot().toFixed(2)}}]
+    }),
+    onApprove:(data,actions)=>actions.order.capture().then(()=>{
+      const d=dati();
+      mailOrdine(d,"PAGATO online - PayPal/carta, rif. "+data.orderID);
+      alert("Pagamento completato. Ora ti mandiamo al messaggio con il riepilogo dell'ordine.");
+      location.href="https://wa.me/"+C.whatsapp+"?text="+encodeURIComponent(testo(d,"PAGATO online - PayPal/carta, rif. "+data.orderID));
+    }),
+    onError:()=>alert("Il pagamento non è andato a buon fine. Riprova o scegli il pagamento alla consegna.")
+  }).render("#paypal");
+  document.head.appendChild(s);
+}
+function cats(){
+  const c=["Tutti",...new Set(P.map(p=>p.cat))];
+  $("#cats").innerHTML=c.map(x=>`<button class="${x===cat?"on":""}" onclick="cat='${x}';cats();lista()">${x}</button>`).join("");
+}
+function lista(){
+  $("#list").innerHTML=P.filter(p=>cat==="Tutti"||p.cat===cat).map(p=>`
+  <div class="p"><div class="ph"><img src="${p.img}" alt="${p.nome}" loading="lazy" onerror="this.parentNode.textContent='${p.em}'"></div>
+  <div class="b"><h3>${p.nome}</h3><small>${p.note}</small><div class="pr">${eur(p.prezzo)}</div>
+  <button onclick="add(${p.id})">Aggiungi</button></div></div>`).join("");
+}
+function add(id){cart[id]=(cart[id]||0)+1;aggiorna()}
+function cambia(id,d){cart[id]=(cart[id]||0)+d;if(cart[id]<=0)delete cart[id];aggiorna()}
+function sub(){return Object.entries(cart).reduce((s,[id,q])=>s+P.find(p=>p.id==id).prezzo*q,0)}
+function tot(){return sub()+(Object.keys(cart).length?C.spedizione:0)}
+function aggiorna(){
+  const n=Object.values(cart).reduce((a,b)=>a+b,0);
+  $("#cnt").textContent=n?`${n} prodotti – ${eur(tot())}`:"Carrello vuoto";
+  $("#rows").innerHTML=Object.entries(cart).map(([id,q])=>{const p=P.find(x=>x.id==id);
+    return `<div class="row"><span>${p.nome}</span><span><button onclick="cambia(${id},-1)">−</button> ${q} <button onclick="cambia(${id},1)">+</button></span><span>${eur(p.prezzo*q)}</span></div>`}).join("")||"<p>Il carrello è vuoto.</p>";
+  $("#tot").textContent="Totale: "+eur(tot())+(C.spedizione?" (spedizione inclusa)":"");
+  $("#card").style.display=C.stripe?"block":"none";
+}
+function openCart(){aggiorna();$("#cart").style.display="block"}
+function closeCart(){$("#cart").style.display="none"}
+function dati(){
+  const n=$("#n").value.trim(),t=$("#t").value.trim(),i=$("#i").value.trim();
+  if(!Object.keys(cart).length){alert("Il carrello è vuoto.");return null}
+  if(!n||!t||!i){alert("Inserisci nome, telefono e indirizzo.");return null}
+  return {n,t,i};
+}
+function testo(d,m){
+  const r=Object.entries(cart).map(([id,q])=>{const p=P.find(x=>x.id==id);return `- ${q} x ${p.nome} (${eur(p.prezzo*q)})`}).join("\n");
+  return `Nuovo ordine (${m})\n${r}\nSpedizione: ${eur(C.spedizione)}\nTotale: ${eur(tot())}\n\nNome: ${d.n}\nTel: ${d.t}\nIndirizzo: ${d.i}`;
+}
+function mailOrdine(d,m){
+  if(!C.web3formsKey)return;
+  try{fetch("https://api.web3forms.com/submit",{method:"POST",keepalive:true,
+    headers:{"Content-Type":"application/json",Accept:"application/json"},
+    body:JSON.stringify({access_key:C.web3formsKey,subject:"Nuovo ordine - "+C.nome+" ("+m+")",name:d.n,message:testo(d,m)})
+  }).catch(()=>{})}catch(e){}
+}
+function sendWA(){const d=dati();if(!d)return false;mailOrdine(d,"contrassegno");location.href="https://wa.me/"+C.whatsapp+"?text="+encodeURIComponent(testo(d,"contrassegno"));return false}
+function sendLink(){const d=dati();if(!d)return false;mailOrdine(d,"carta - inviare link di pagamento");location.href="https://wa.me/"+C.whatsapp+"?text="+encodeURIComponent(testo(d,"carta - inviatemi il link di pagamento"));return false}
+function payCard(){const d=dati();if(!d)return false;window.open("https://wa.me/"+C.whatsapp+"?text="+encodeURIComponent(testo(d,"carta")),"_blank");location.href=C.stripe;return false}
+init();
+</script>
+</body>
+</html>
